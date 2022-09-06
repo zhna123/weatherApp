@@ -166,9 +166,8 @@ async function fetchAndDisplayImage(weather) {
 
 function addUnit(div) {
     const unitValue = document.querySelector('input[name="unit"]:checked').value;
-    let unit = unitValue === 'f' ? '\u2109' : '\u2103';
-    // C -> \u2103
-    // F -> \u2109
+    // \u00B0 represents degree
+    let unit = unitValue === 'f' ? '\u00B0F' : '\u00B0C';
     const unitDisplay = document.createElement('span');
     unitDisplay.textContent = ' ' + unit;
     div.appendChild(unitDisplay);
@@ -186,8 +185,6 @@ function convertTemp(e) {
     // high
     const highTempDiv = document.querySelector('.high');
     const highTemp = getTempValue(highTempDiv.textContent);
-
-    console.log(highTemp);
 
     // low
     const lowTempDiv = document.querySelector('.low');
