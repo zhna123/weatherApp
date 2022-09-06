@@ -46,7 +46,7 @@ async function fetchWeatherDataByState(cityName, stateCode, countryCode, display
 }
 
 async function fetchNewImage(keyword) {
-    const response = await fetch(getImageURL(keyword), {mode: 'cors'});
+    const response = await fetch(getImageURL('weather sky ' + keyword), {mode: 'cors'});
     return await response.json();
 }
 
@@ -105,8 +105,13 @@ function extractWeather(data) {
     return weather;
 }
 
+const loader = document.querySelector('.loader');
 const searchBtn = document.querySelector('.search');
 searchBtn.addEventListener('click', function(e) {
+
+    // show loader - loading...
+    loader.style.display = 'block';
+
     const imageDiv = document.querySelector('.image');
     const tempDiv = document.querySelector('.temp');
     imageDiv.classList.add('show');
@@ -115,8 +120,11 @@ searchBtn.addEventListener('click', function(e) {
     const location = document.querySelector('input[type=search]').value;
     const unitValue = document.querySelector('input[name="unit"]:checked').value;
     const isF = unitValue === 'f' ? true : false;
+
     fetchWeatherData(location, isF).then (
         response => {
+            // response is back - hide loader
+            loader.style.display = 'none';
             displayWeather(response);
             fetchAndDisplayImage(response);
         }

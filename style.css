@@ -142,3 +142,9 @@ img {
     margin-left: 10px;
     margin-right: 10px;
 }
+
+.loader {
+    display: none;
+    text-align: center;
+    font-size: 2rem;
+}
