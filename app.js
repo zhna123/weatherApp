@@ -3,15 +3,27 @@ const LOW = 'L: ';
 const FEEL = 'Feels like ';
 
 class Weather {
-    constructor(minTemp, maxTemp, currentTemp, feelsLike, description, wind) {
+    constructor(minTemp, maxTemp, currentTemp, feelsLike, description, wind, name) {
         this.minTemp = minTemp.toFixed(1);
         this.maxTemp = maxTemp.toFixed(1);
         this.currentTemp = currentTemp.toFixed(1);
         this.feelsLike = feelsLike.toFixed(1);
         this.description = description;
         this.wind = wind;   
+        this.name = name;
     }
 }
+
+const imageDiv = document.querySelector('.image');
+const tempDiv = document.querySelector('.temp');
+const nameDiv = document.querySelector('.weather_location');
+const errorDiv = document.querySelector('.error');
+const weatherSummaryDiv = document.querySelector('.summary');
+const currentTempDiv = document.querySelector('.current');
+const highTempDiv = document.querySelector('.high');
+const lowTempDiv = document.querySelector('.low');
+const feelDiv = document.querySelector('.feel');
+const image = document.querySelector('img');
 
 function getApiURLByCity(cityName, unit) {
     return `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&units=${unit}&appid=73e9d4d63371c9e3e5c2d2b5b375f125`;
@@ -64,6 +76,7 @@ async function fetchRawData(locationArray, displayFahrenheit) {
     } else if (locationArray.length === 3) {
         return await fetchWeatherDataByState(locationArray[0], locationArray[1], locationArray[2], displayFahrenheit);
     } else {
+        // wrong input
         return null;
     }
     
@@ -72,23 +85,30 @@ async function fetchRawData(locationArray, displayFahrenheit) {
 // main function to call from client
 async function fetchWeatherData(userInput, displayFahrenheit) {
     const locationArray = userInput.split(',');
-    try {
-        const response = await fetchRawData(locationArray, displayFahrenheit);
-        if (response === null) {
-            console.log("Must enter one of the following: city / city,state,country / zipcode");
-            return;
-        }
-        // mainly to throw an error for 404
-        if(response.cod !== 200) {
-            throw new Error(response.message)
-        }
-        const weather = extractWeather(response);
-        // console.log(weather)
-        return weather;
-    } catch(e) {
-        console.log("ERROR: " + e);
+    const response = await fetchRawData(locationArray, displayFahrenheit);
+    // error for invalid input
+    if (response === null) {
+        console.log('Must enter correct input.')
+        const message = "Must enter one of the following: city / city,state,country / zipcode";
+        throwError(message);
     }
-    
+        // mainly to throw an error for 404 - not found
+    if(response.cod !== 200) {
+        console.log('Location not found!' + response.cod)
+        throwError('Location not found - ' + response.message);
+    }
+    const weather = extractWeather(response);
+    return weather;
+}
+
+function throwError(message) {
+    imageDiv.style.display = 'none';
+    tempDiv.style.display = 'none';
+    nameDiv.style.display = 'none';
+
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    throw new Error(message);
 }
 
 function extractWeather(data) {
@@ -100,8 +120,9 @@ function extractWeather(data) {
     const feelsLike = data.main.feels_like;
     const description = data.weather[0].description;
     const wind = data.wind.speed;
+    const name = data.name;
 
-    const weather = new Weather(minTemp, maxTemp, currentTemp, feelsLike, description, wind);
+    const weather = new Weather(minTemp, maxTemp, currentTemp, feelsLike, description, wind, name);
     return weather;
 }
 
@@ -112,46 +133,51 @@ searchBtn.addEventListener('click', function(e) {
     // show loader - loading...
     loader.style.display = 'block';
 
-    const imageDiv = document.querySelector('.image');
-    const tempDiv = document.querySelector('.temp');
-    imageDiv.classList.add('show');
-    tempDiv.classList.add('show');
-
     const location = document.querySelector('input[type=search]').value;
     const unitValue = document.querySelector('input[name="unit"]:checked').value;
     const isF = unitValue === 'f' ? true : false;
+
+    errorDiv.style.display = 'none';
 
     fetchWeatherData(location, isF).then (
         response => {
             // response is back - hide loader
             loader.style.display = 'none';
+
+            nameDiv.style.display = 'block';
+            // city name
+            nameDiv.textContent = response.name;
+
+            imageDiv.style.display = 'grid';
+            tempDiv.style.display = 'grid';
+
             displayWeather(response);
             fetchAndDisplayImage(response);
         }
-    );
+    ).catch (
+        err => {
+            console.log('caught!' + err);
+            loader.style.display = 'none';
+        });
 })
 
 function displayWeather(weather) {
     // summary
-    const weatherSummaryDiv = document.querySelector('.summary');
     weatherSummaryDiv.textContent = weather.description;
+
     // temperatures
-    const currentTempDiv = document.querySelector('.current');
     currentTempDiv.textContent = weather.currentTemp;
     addUnit(currentTempDiv);
 
     // high temp
-    const highTempDiv = document.querySelector('.high');
     highTempDiv.textContent = HIGH + weather.maxTemp;
     addUnit(highTempDiv);
 
     // low temp
-    const lowTempDiv = document.querySelector('.low');
     lowTempDiv.textContent = LOW + weather.minTemp;
     addUnit(lowTempDiv);
 
     // feels like
-    const feelDiv = document.querySelector('.feel');
     feelDiv.textContent = FEEL + weather.feelsLike;
     addUnit(feelDiv)
 }
@@ -159,8 +185,6 @@ function displayWeather(weather) {
 async function fetchAndDisplayImage(weather) {
     const summary = weather.description;
     const response = await fetchNewImage(summary);
-
-    const image = document.querySelector('img');
     image.src = response.data.images.original.url;
 }
 
@@ -179,19 +203,15 @@ radios.forEach(radio => radio.addEventListener('change', convertTemp));
 
 function convertTemp(e) {
     // current temp
-    const currentTempDiv = document.querySelector('.current');
     const currentTemp = getTempValue(currentTempDiv.textContent);
 
     // high
-    const highTempDiv = document.querySelector('.high');
     const highTemp = getTempValue(highTempDiv.textContent);
 
     // low
-    const lowTempDiv = document.querySelector('.low');
     const lowTemp = getTempValue(lowTempDiv.textContent);
 
     // feels like
-    const feelsTempDiv = document.querySelector('.feel');
     const feelsTemp = getTempValue(feelsTempDiv.textContent);
 
     // this is the checked one, because the radio button must have been changed 
