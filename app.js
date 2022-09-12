@@ -22,7 +22,7 @@ const weatherSummaryDiv = document.querySelector('.summary');
 const currentTempDiv = document.querySelector('.current');
 const highTempDiv = document.querySelector('.high');
 const lowTempDiv = document.querySelector('.low');
-const feelDiv = document.querySelector('.feel');
+const feelsTempDiv = document.querySelector('.feel');
 const image = document.querySelector('img');
 
 function getApiURLByCity(cityName, unit) {
@@ -166,26 +166,33 @@ function displayWeather(weather) {
     weatherSummaryDiv.textContent = weather.description;
 
     // temperatures
-    currentTempDiv.textContent = weather.currentTemp;
-    addUnit(currentTempDiv);
+    displayTempOnDiv(currentTempDiv, weather.currentTemp);
 
     // high temp
-    highTempDiv.textContent = HIGH + weather.maxTemp;
-    addUnit(highTempDiv);
+    displayTempOnDiv(highTempDiv, weather.maxTemp);
 
     // low temp
-    lowTempDiv.textContent = LOW + weather.minTemp;
-    addUnit(lowTempDiv);
+    displayTempOnDiv(lowTempDiv, weather.minTemp);
 
     // feels like
-    feelDiv.textContent = FEEL + weather.feelsLike;
-    addUnit(feelDiv)
+    displayTempOnDiv(feelsTempDiv, FEEL + weather.feelsLike);
 }
 
 async function fetchAndDisplayImage(weather) {
     const summary = weather.description;
     const response = await fetchNewImage(summary);
     image.src = response.data.images.original.url;
+}
+
+function displayTempOnDiv(div, temp) {
+    div.textContent = temp;
+    addUnit(div);
+}
+
+function displayTemp(div, temp, convert, prefix = '') {
+    const res = convert(temp);
+    div.textContent = prefix + res;
+    addUnit(div);
 }
 
 function addUnit(div) {
@@ -219,39 +226,17 @@ function convertTemp(e) {
     const changedToUnitValue = document.querySelector('input[name="unit"]:checked').value;
     
     if (changedToUnitValue === 'c') {
-        const currentCValue = fToC(currentTemp);
-        currentTempDiv.textContent = currentCValue;
-        addUnit(currentTempDiv);
-
-        const highCValue = fToC(highTemp);
-        highTempDiv.textContent = HIGH + highCValue;
-        addUnit(highTempDiv);
-
-        const lowCValue = fToC(lowTemp);
-        lowTempDiv.textContent = LOW + lowCValue;
-        addUnit(lowTempDiv);
-
-        const feelsCValue = fToC(feelsTemp);
-        feelsTempDiv.textContent = FEEL + feelsCValue;
-        addUnit(feelsTempDiv);
+        displayTemp(currentTempDiv, currentTemp, fToC);
+        displayTemp(highTempDiv, highTemp, fToC, HIGH);
+        displayTemp(lowTempDiv, lowTemp, fToC, LOW);
+        displayTemp(feelsTempDiv, feelsTemp, fToC, FEEL);
     }
 
     if (changedToUnitValue === 'f') {
-        const currentFValue = cToF(currentTemp);
-        currentTempDiv.textContent = currentFValue;
-        addUnit(currentTempDiv);
-
-        const highFValue = cToF(highTemp);
-        highTempDiv.textContent = HIGH + highFValue;
-        addUnit(highTempDiv);
-
-        const lowFValue = cToF(lowTemp);
-        lowTempDiv.textContent = LOW + lowFValue;
-        addUnit(lowTempDiv);
-
-        const feelsFValue = cToF(feelsTemp);
-        feelsTempDiv.textContent = FEEL + feelsFValue;
-        addUnit(feelsTempDiv);
+        displayTemp(currentTempDiv, currentTemp, cToF);
+        displayTemp(highTempDiv, highTemp, cToF, HIGH);
+        displayTemp(lowTempDiv, lowTemp, cToF, LOW);
+        displayTemp(feelsTempDiv, feelsTemp, cToF, FEEL);
     }
 }
 
@@ -265,12 +250,7 @@ function fToC(fahrenheit) {
 
 function getTempValue(temp) {
     // extract temp number
-    let numbers;
-    // if (!text || typeof text !== 'string') {
-    //     return [];
-    // }
-
-    numbers = temp.match(/(-\d+|\d+)(,\d+)*(\.\d+)*/g);
+    let numbers = temp.match(/(-\d+|\d+)(,\d+)*(\.\d+)*/g);
     return numbers[0];
 }
 
